@@ -1,0 +1,69 @@
+// Copyright 2023 zyy17 <zyylsxm@gmail.com>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+option go_package = "github.com/zyy17/pubsub/proto";
+
+package pubsub;
+
+// Publisher publishes Message of a Topic to Subscribers.
+message Message {
+  // message_id is a unique identifier for this message.
+  string message_id = 1;
+
+  // topic is the topic this message belongs to. Each message belongs to exactly one topic.
+  string topic = 2;
+
+  // timestamp is the unix timestamp when this message is published.
+  int64 timestamp = 3;
+
+  // payload is the content of this message.
+  bytes payload = 4;
+}
+
+// SubscribeRequest is the request to subscribe topics.
+message SubscribeRequest {
+  repeated string topics = 1;
+  string subscriber_id = 2;
+}
+
+message UnsubscribeRequest {
+  repeated string topics = 1;
+  string subscriber_id = 2;
+  bool drop_offline_messages = 3;
+}
+
+message UnsubscribeResponse {}
+
+// If the subscriber receives the message, it should send a PublishAckRequest back to the publisher.
+message PublishAckRequest {
+  string message_id = 1;
+  string subscriber_id = 2;
+  string topic = 3;
+}
+
+message PublishAckResponse {}
+
+service PubSub {
+  // Subscribe subscribes the topics and receives messages.
+  rpc Subscribe(SubscribeRequest) returns (stream Message);
+
+  // Unsubscribe unsubscribes the topics.
+  rpc Unsubscribe(UnsubscribeRequest) returns (UnsubscribeResponse);
+
+  // PublishAck is used to acknowledge the message received.
+  // When subscriber re-subscribe the topic, it will receive the offline messages.
+  rpc PublishAck(PublishAckRequest) returns (PublishAckResponse);
+}
